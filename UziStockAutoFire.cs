@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Uzi Stock Auto Fire", "NINJA WORKS", "1.0.0")]
+    [Info("Uzi Stock Auto Fire", "Claude", "1.1.0")]
     [Description("Lets the Uzi keep firing while the trigger is held with its stock extended.")]
     public class UziStockAutoFire : RustPlugin
     {
@@ -11,7 +11,8 @@ namespace Oxide.Plugins
         private const float DamageMultiplier = 1f;
         private const bool EstimateHitArea = true;
         private const bool ViewKick = true;
-        private const float ViewKickScale = 1f;
+        private const float ViewKickPitchScale = 1f;
+        private const float ViewKickYawScale = 2f;
 
         private const float MinFireInterval = 0.03f;
         private const float SimulationStep = 1f / 32f;
@@ -134,8 +135,8 @@ namespace Oxide.Plugins
             }
 
             RegisterShot(state, uzi, now);
-            if (ViewKick && ViewKickScale > 0f)
-                SendViewKick(uzi, aiming, ViewKickScale);
+            if (ViewKick && (ViewKickPitchScale > 0f || ViewKickYawScale > 0f))
+                SendViewKick(uzi, aiming);
 
             state.LastAmmo = uzi.primaryMagazine.contents;
         }
@@ -224,8 +225,9 @@ namespace Oxide.Plugins
             return Mathf.Max(0f, cone);
         }
 
-        private static void SendViewKick(Uzi uzi, bool aiming, float scale)
+        private static void SendViewKick(Uzi uzi, bool aiming)
         {
+            float scale = 1f;
             float pitch = 0.8f;
             float yaw = UnityEngine.Random.Range(-0.3f, 0.3f);
             float duration = 0.06f;
@@ -247,7 +249,7 @@ namespace Oxide.Plugins
 
             scale *= ProjectileWeaponMod.Mult(uzi, ProjectileWeaponMod.SelectRecoil, ProjectileWeaponMod.SelectScalar);
 
-            uzi.SendPunch(new Vector3(-pitch * scale, yaw * scale, 0f), Mathf.Max(0.02f, duration));
+            uzi.SendPunch(new Vector3(-pitch * scale * ViewKickPitchScale, yaw * scale * ViewKickYawScale, 0f), Mathf.Max(0.02f, duration));
         }
 
         private bool FireShot(BasePlayer player, Uzi uzi, float weaponAimCone)
