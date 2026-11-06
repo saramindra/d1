@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Uzi Stock Auto Fire", "Claude", "1.1.0")]
-    [Description("Lets the Uzi keep firing while the trigger is held with its stock extended.")]
+    [Info("Uzi Stock Auto Fire", "NINJA WORKS", "1.0.3")]
+    [Description("Lets the Uzi keep firing while the trigger is held with its stock extended, and gives new Uzis an extended stock.")]
     public class UziStockAutoFire : RustPlugin
     {
         private const float FireIntervalOverride = 0f;
@@ -12,7 +12,8 @@ namespace Oxide.Plugins
         private const bool EstimateHitArea = true;
         private const bool ViewKick = true;
         private const float ViewKickPitchScale = 1f;
-        private const float ViewKickYawScale = 2f;
+        private const float ViewKickYawScale = 1f;
+        private const bool DeployStockOnNewUzi = true;
 
         private const float MinFireInterval = 0.03f;
         private const float SimulationStep = 1f / 32f;
@@ -72,6 +73,26 @@ namespace Oxide.Plugins
                 StopAutoFire(state);
                 _states.Remove(userId);
             }
+        }
+
+        private void OnEntitySpawned(Uzi uzi)
+        {
+            if (!DeployStockOnNewUzi || global::Rust.Application.isLoadingSave)
+                return;
+
+            NextTick(() => DeployNewUziStock(uzi));
+        }
+
+        private static void DeployNewUziStock(Uzi uzi)
+        {
+            if (_plugin == null || uzi == null || uzi.IsDestroyed || uzi.IsStockDeployed())
+                return;
+
+            BaseEntity parent = uzi.GetParentEntity();
+            if (parent != null && (parent.IsNpc || !(parent is BasePlayer)))
+                return;
+
+            uzi.SetStockDeployed(true);
         }
 
         private void OnWeaponFired(BaseProjectile weapon, BasePlayer player, ItemModProjectile mod, ProtoBuf.ProjectileShoot shoot)
